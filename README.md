@@ -10,7 +10,7 @@ Create AddOns folder if necessary
 
 After Installation directory tree should look like the following
 
-'''
+<pre>
 World of Warcraft
   `- Interface
      `- AddOns
@@ -23,7 +23,7 @@ World of Warcraft
               |- ez-button.blp
               |- ez-button-highlight.blp
               `- ez-button-pushed.blp
-'''
+</pre>
 
 Features:
 - Displays EP/GP ratio in neat frame that can be sorted by clicking on headers
