@@ -173,17 +173,21 @@ function addon:Sort(by, toggle)
 	end
 
 	if by == SORT_BY_NAME then
-		if self.sort_order == SORT_DESC then
+		if self.main_frame.header1.sort_order == SORT_DESC then
 			sort(self.data, function(x,y) return x[1] > y[1] end)
 		else
 			sort(self.data, function(x,y) return x[1] < y[1] end)
 		end
 	elseif by == SORT_BY_CLASS then
-		if self.sort_order == SORT_DESC then
+		if self.main_frame.header2.sort_order == SORT_DESC then
 			sort(self.data, function(x,y)
 				if x[2] == y[2] then
 					-- same class, sort by ratio
-					return x[3] > y[3]
+					if self.main_frame.header3.sort_order == SORT_DESC then
+						return x[3] > y[3]
+					else
+						return x[3] < y[3]
+					end
 				else
 					return x[2] > y[2]
 				end
@@ -192,14 +196,18 @@ function addon:Sort(by, toggle)
 			sort(self.data, function(x,y)
 				if x[2] == y[2] then
 					-- same class, sort by ratio
-					return x[3] < y[3]
+					if self.main_frame.header3.sort_order == SORT_DESC then
+						return x[3] > y[3]
+					else
+						return x[3] < y[3]
+					end
 				else
 					return x[2] < y[2]
 				end
 			end)
 		end
 	elseif by == SORT_BY_RATIO then
-		if self.sort_order == SORT_DESC then
+		if self.main_frame.header3.sort_order == SORT_DESC then
 			sort(self.data, function(x,y) return x[3] > y[3] end)
 		else
 			sort(self.data, function(x,y) return x[3] < y[3] end)
@@ -284,13 +292,17 @@ function addon:CreateGUI()
 		header1:SetPoint('TOPLEFT', 16, -62)
 		WhoFrameColumn_SetWidth(83, header1)
 		header1:SetText('Name')
+		header1.sort_order = SORT_ASC
+		
 		header1:SetScript('OnClick', function()
-			local toggle = false
-			if self.sort_by == SORT_BY_NAME then
-				toggle = true
+			if this.sort_order == SORT_DESC then
+				this.sort_order = SORT_ASC
+			else
+				this.sort_order = SORT_DESC
 			end
+			
 			self.sort_by = SORT_BY_NAME
-			self:Sort(self.sort_by, toggle)
+			self:Sort(self.sort_by)
 		end)
 		
 		local header2 = CreateFrame('Button', self:GetUniqueName(), main_frame, 'GuildFrameColumnHeaderTemplate')
@@ -298,13 +310,17 @@ function addon:CreateGUI()
 		header2:SetPoint('LEFT', header1, 'RIGHT', -2, 0)
 		WhoFrameColumn_SetWidth(92, header2)
 		header2:SetText('Class')
-		header2:SetScript('OnClick', function()
-			local toggle = false
-			if self.sort_by == SORT_BY_CLASS then
-				toggle = true
+		header2.sort_order = SORT_ASC
+		
+		header2:SetScript('OnClick', function()			
+			if this.sort_order == SORT_DESC then
+				this.sort_order = SORT_ASC
+			else
+				this.sort_order = SORT_DESC
 			end
+			
 			self.sort_by = SORT_BY_CLASS
-			self:Sort(self.sort_by, toggle)
+			self:Sort(self.sort_by)
 		end)
 		
 		local header3 = CreateFrame('Button', self:GetUniqueName(), main_frame, 'GuildFrameColumnHeaderTemplate')
@@ -312,13 +328,17 @@ function addon:CreateGUI()
 		header3:SetPoint('LEFT', header2, 'RIGHT', -2, 0)
 		WhoFrameColumn_SetWidth(72, header3)
 		header3:SetText('Ratio')
+		header3.sort_order = SORT_DESC
+		
 		header3:SetScript('OnClick', function()
-			local toggle = false
-			if self.sort_by == SORT_BY_RATIO then
-				toggle = true
+			if this.sort_order == SORT_DESC then
+				this.sort_order = SORT_ASC
+			else
+				this.sort_order = SORT_DESC
 			end
+			
 			self.sort_by = SORT_BY_RATIO
-			self:Sort(self.sort_by, toggle)
+			self:Sort(self.sort_by)
 		end)
 	end
 	
