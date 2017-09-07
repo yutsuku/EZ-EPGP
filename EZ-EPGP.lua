@@ -246,6 +246,9 @@ function addon:CreateGUI()
 	main_frame:SetScript('OnDragStop', function()
 		this:StopMovingOrSizing()
 	end)
+	main_frame:SetScript('OnShow', function()
+		self:UpdateScrollFrame()
+	end)
 	main_frame:Hide()
 	
 	do
