@@ -76,18 +76,21 @@ function addon:UpdateData()
 		if not name or not class then break end
 		
 		if USE_NOTE == USE_GUILD_NOTE then
-			--local user = {name, class}
 			local _,_, ep, gp = string.find(note, '(%d+)/(%d+)')
 			if ep and gp then
 				ratio = ep/gp
 			end
-			userdata[i] = {name, class, ratio, online}
+			if ratio > 0 then
+				table.insert(userdata, {name, class, ratio, online})
+			end
 		elseif USE_NOTE == USE_OFFICER_NOTE and CanViewOfficerNote() then
 			local _,_, ep, gp = string.find(officernote, '(%d+)/(%d+)')
 			if ep and gp then
 				ratio = ep/gp
 			end
-			userdata[i] = {name, class, ratio, online}
+			if ratio > 0 then
+				table.insert(userdata, {name, class, ratio, online})
+			end
 		end
 	end
 	
