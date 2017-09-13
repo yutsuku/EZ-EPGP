@@ -316,7 +316,7 @@ function addon:CreateGUI()
 		button_ez:SetPoint('TOPLEFT', _G['FriendsFrame'], 'TOPLEFT', 7, -6)
 		
 		button_ez:SetNormalTexture([[Interface\Addons\EZ-EPGP\icons\ez-button]])
-		button_ez:SetHighlightTexture([[Interface\Addons\EZ-EPGP\icons\ez-button-highlight]])
+		button_ez:SetHighlightTexture([[Interface\Addons\EZ-EPGP\icons\ez-button-highlight]], 'ADD')
 		button_ez:SetPushedTexture([[Interface\Addons\EZ-EPGP\icons\ez-button-pushed]])
 		
 		button_ez:SetScript('OnClick', function()
