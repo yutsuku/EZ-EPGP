@@ -25,7 +25,8 @@ end)
 
 addon:RegisterEvent('ADDON_LOADED')
 addon:RegisterEvent('GUILD_ROSTER_UPDATE')
-
+addon:RegisterEvent('RAID_ROSTER_UPDATE')
+addon:RegisterEvent('PARTY_MEMBERS_CHANGED')
 
 function addon:print(message, level, headless)
 	if not message or message == '' then return end
@@ -55,41 +56,95 @@ do
 	end
 end
 
-function addon:DEBUG_GenerateData()
-	local data = {}
-	for i=1, 60, 1 do
-		local item = {'Name'..i, 'Class', math.random() + math.random(0, 10)}
-		data[i] = item
+function addon:RAID_ROSTER_UPDATE()
+	self:HandlePlayerChange()
+end
+
+function addon:PARTY_MEMBERS_CHANGED()
+	self:HandlePlayerChange()
+end
+
+function addon:HandlePlayerChange()
+	if self:IsInGroup(UnitName('player')) then
+		self.main_frame.raidframe.button:Enable()
+	else
+		self.main_frame.raidframe.button:SetChecked(false)
+		self.main_frame.raidframe.button:Disable()
 	end
-	self.data = data
+	
+	self:UpdateData()
+	self:Sort(self.sort_by)
+end
+
+function addon:IsInGroup(name)
+	local playersRaid = GetNumRaidMembers()
+	local playersParty = GetNumPartyMembers()
+	
+	if playersRaid > 0 then
+		for i=1, playersRaid do
+			if UnitName('raid'..i) == name then
+				return true
+			end
+		end
+	elseif playersParty > 0 then
+		if UnitName('player') == name then
+			return true
+		end
+		for i=1, playersParty do
+			if UnitName('party'..i) == name then
+				return true
+			end
+		end
+	end
+	
+	return false
 end
 
 function addon:UpdateData()
 	if not IsInGuild() then return end
 	
 	local userdata = {}
-	
-	for i=1, 500, 1 do
-		local name, _, _, _, class, _, note, officernote, online = GetGuildRosterInfo(i)
-		local ratio = 0
-		
-		if not name or not class then break end
-		
-		if USE_NOTE == USE_GUILD_NOTE then
+
+	if USE_NOTE == USE_GUILD_NOTE then
+		for i=1, 500, 1 do
+			local name, _, _, _, class, _, note, officernote, online = GetGuildRosterInfo(i)
+			local ratio = 0
+			
+			if not name or not class then break end
+			
 			local _,_, ep, gp = string.find(note, '(%d+)/(%d+)')
 			if ep and gp then
 				ratio = ep/gp
 			end
 			if ratio > 0 then
-				table.insert(userdata, {name, class, ratio, online})
+				if self.main_frame.raidframe.button:IsChecked() then
+					if self:IsInGroup(name) then
+						table.insert(userdata, {name, class, ratio, online})
+					end
+				else
+					table.insert(userdata, {name, class, ratio, online})
+				end
 			end
-		elseif USE_NOTE == USE_OFFICER_NOTE and CanViewOfficerNote() then
+		end
+	elseif USE_NOTE == USE_OFFICER_NOTE and CanViewOfficerNote() then
+		for i=1, 500, 1 do
+			local name, _, _, _, class, _, note, officernote, online = GetGuildRosterInfo(i)
+			local ratio = 0
+			
+			if not name or not class then break end
+			
 			local _,_, ep, gp = string.find(officernote, '(%d+)/(%d+)')
 			if ep and gp then
 				ratio = ep/gp
 			end
 			if ratio > 0 then
-				table.insert(userdata, {name, class, ratio, online})
+				if self.main_frame.raidframe.button:GetChecked() then
+					if self:IsInGroup(name) then
+						table.insert(userdata, {name, class, ratio, online})
+					end
+				else
+					table.insert(userdata, {name, class, ratio, online})
+				end
 			end
 		end
 	end
@@ -103,7 +158,7 @@ function addon:GetDataRange()
 end
 
 function addon:GetData(index)
-	local name, class, ratio
+	local name, class, ratio, online
 	
 	if self.data[index] then
 		name = self.data[index][1]
@@ -237,7 +292,6 @@ function addon:CreateGUI()
 		edgeSize = 32,
 		insets = { left = 11, right = 12, top = 12, bottom = 11 }
 	})
-    --main_frame:SetBackdropColor(0, 0, 0, .6)
 	main_frame:SetMovable(true)
 	main_frame:SetClampedToScreen(true)
 	main_frame:SetToplevel(true)
@@ -290,6 +344,62 @@ function addon:CreateGUI()
 		text:SetFontObject(GameFontNormal)
 		text:SetPoint('TOP', main_frame.header, 0, -14)
 		text:SetText('EZ EP/GP')
+	end
+	
+	do
+		local raidframe = CreateFrame('Frame', nil, main_frame)
+		main_frame.raidframe = raidframe
+		raidframe:SetWidth(210)
+		raidframe:SetHeight(23)
+		raidframe:SetPoint('TOPRIGHT', main_frame, -16, -28)
+
+		do
+			local bg_left = raidframe:CreateTexture(nil, 'BACKGROUND')
+			raidframe.bg_left = bg_left
+			bg_left:SetTexture([[Interface\ClassTrainerFrame\UI-ClassTrainer-FilterBorder]])
+			bg_left:SetWidth(12)
+			bg_left:SetHeight(28)
+			bg_left:SetPoint('TOPLEFT', raidframe, 0, 0)
+			bg_left:SetTexCoord(0, 0.09375, 0, 1.0)
+			
+			local bg_middle = raidframe:CreateTexture(nil, 'BACKGROUND')
+			raidframe.bg_middle = bg_middle
+			bg_middle:SetTexture([[Interface\ClassTrainerFrame\UI-ClassTrainer-FilterBorder]])
+			bg_middle:SetWidth(186)
+			bg_middle:SetHeight(28)
+			bg_middle:SetPoint('LEFT', bg_left, 'RIGHT', 0, 0)
+			bg_middle:SetTexCoord(0.09375, 0.90625, 0, 1.0)
+			
+			local bg_right = raidframe:CreateTexture(nil, 'BACKGROUND')
+			raidframe.bg_right = bg_right
+			bg_right:SetTexture([[Interface\ClassTrainerFrame\UI-ClassTrainer-FilterBorder]])
+			bg_right:SetWidth(12)
+			bg_right:SetHeight(28)
+			bg_right:SetPoint('LEFT', bg_middle, 'RIGHT', 0, 0)
+			bg_right:SetTexCoord(0.90625, 1.0, 0, 1.0)
+		end
+		
+		local button = CreateFrame('CheckButton', nil, raidframe)
+		raidframe.button = button
+		button:SetWidth(20)
+		button:SetHeight(20)
+		button:SetPoint('RIGHT', raidframe, -8, 0)
+		button:SetNormalTexture([[Interface\Buttons\UI-CheckBox-Up]])
+		button:SetHighlightTexture([[Interface\Buttons\UI-CheckBox-Highlight]], 'ADD')
+		button:SetPushedTexture([[Interface\Buttons\UI-CheckBox-Down]])
+		button:SetCheckedTexture([[Interface\Buttons\UI-CheckBox-Check]])
+		button:SetDisabledCheckedTexture([[Interface\Buttons\UI-CheckBox-Check-Disabled]])
+		
+		button:SetScript('OnClick', function()
+			self:UpdateData()
+			self:Sort(self.sort_by)
+		end)
+		
+		local label = button:CreateFontString()
+		raidframe.label = label
+		label:SetFontObject(GameFontHighlightSmall)
+		label:SetPoint('RIGHT', button, 'LEFT', -10, 1)
+		label:SetText('Show Raid members')
 	end
 	
 	do
@@ -408,11 +518,6 @@ function addon:CreateGUI()
 		scrollframe:SetPoint('TOPLEFT', main_frame, 18, -86)
 		scrollframe:EnableMouse(true)
 		
-		--[[scrollframe:SetBackdrop({
-			bgFile=[[Interface\Buttons\YELLOWORANGE64]],
-			tile = true,
-		})]]
-		
 		local t1 = scrollframe:CreateTexture(nil, 'BACKGROUND')
 		scrollframe.t1 = t1
 		t1:SetTexture([[Interface\PaperDollInfoFrame\UI-Character-ScrollBar]])
@@ -451,13 +556,10 @@ function addon:ADDON_LOADED()
 	self.sort_by = SORT_BY_RATIO
 	
 	self:CreateGUI()
-	self:UpdateData()
-	self:Sort(self.sort_by)
+	self:HandlePlayerChange()
 end
 
 function addon:GUILD_ROSTER_UPDATE()
-	if self.main_frame:IsVisible() then
-		self:UpdateData()
-		self:Sort(self.sort_by)
-	end
+	self:UpdateData()
+	self:Sort(self.sort_by)
 end

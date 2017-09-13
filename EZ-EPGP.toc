@@ -1,6 +1,6 @@
 ## Interface: 11200
 ## Title: EZ-EPGP
 ## Author: moh
-## Version: 1.0
+## Version: 1.1
 
 EZ-EPGP.lua
