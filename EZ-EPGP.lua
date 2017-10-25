@@ -102,11 +102,23 @@ end
 
 function addon:UpdateData()
 	if not IsInGuild() then return end
+	if self.manualUpdate and self.manualUpdate == 2 then
+		self.manualUpdate = nil
+		return
+	end
 	
 	local userdata = {}
+	local showOffline = GetGuildRosterShowOffline()
+	
+	if not showOffline then
+		self.manualUpdate = 1
+		self.manualShowOffline = false
+		SetGuildRosterShowOffline(true)
+		return
+	end
 
 	if USE_NOTE == USE_GUILD_NOTE then
-		for i=1, 500, 1 do
+		for i=1, GetNumGuildMembers(), 1 do
 			local name, _, _, _, class, _, note, officernote, online = GetGuildRosterInfo(i)
 			local ratio = 0
 			
@@ -127,7 +139,7 @@ function addon:UpdateData()
 			end
 		end
 	elseif USE_NOTE == USE_OFFICER_NOTE and CanViewOfficerNote() then
-		for i=1, 500, 1 do
+		for i=1, GetNumGuildMembers(), 1 do
 			local name, _, _, _, class, _, note, officernote, online = GetGuildRosterInfo(i)
 			local ratio = 0
 			
@@ -151,6 +163,12 @@ function addon:UpdateData()
 	
 	self.data = userdata
 	self:UpdateScrollFrame()
+	
+	if self.manualUpdate then
+		self.manualUpdate = 2
+		SetGuildRosterShowOffline(self.manualShowOffline)
+		return
+	end
 end
 
 function addon:GetDataRange()
@@ -388,7 +406,7 @@ function addon:CreateGUI()
 		button:SetHighlightTexture([[Interface\Buttons\UI-CheckBox-Highlight]], 'ADD')
 		button:SetPushedTexture([[Interface\Buttons\UI-CheckBox-Down]])
 		button:SetCheckedTexture([[Interface\Buttons\UI-CheckBox-Check]])
-		button:SetDisabledCheckedTexture([[Interface\Buttons\UI-CheckBox-Check-Disabled]])
+		--button:SetDisabledCheckedTexture([[Interface\Buttons\UI-CheckBox-Check-Disabled]])
 		
 		button:SetScript('OnClick', function()
 			self:UpdateData()
